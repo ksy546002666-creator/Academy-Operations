@@ -1,0 +1,683 @@
+<title>브레아노 AI 비서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Gowun+Batang:wght@700&display=swap">
+<!--
+  세종 브레아노 피아노학원 · AI 홍보·운영 비서
+  - 원장님 화면에서 Claude가 직접 글을 써 줍니다 (claude.ai 안에서 열었을 때).
+  - 학원 정보 카드(⚙︎)를 고치면 모든 글에 반영됩니다. 보관함·대화는 이 기기 브라우저에만 저장됩니다.
+-->
+<style>
+/* Layout: 한 화면 앱 — 상단 브랜드 띠(건반 무늬) / 대화 영역 / 하단 입력창. 패널은 아래에서 올라오는 시트. */
+:root{
+  --bg:#EEF1F4;          /* 악보 종이 같은 차가운 회백 */
+  --surface:#FFFFFF;
+  --ink:#16202E;         /* 피아노 블랙에 가까운 남색 */
+  --muted:#5D6878;
+  --line:#D6DCE3;
+  --brand:#23395B;       /* 브레아노 딥 네이비 */
+  --brand-ink:#FFFFFF;
+  --accent:#C2873A;      /* 금관 / 피아노 페달 브라스 */
+  --chip:#E4E9F0;
+  --chip-ink:#23395B;
+  --user:#23395B; --user-ink:#FFFFFF;
+  --ok:#2F7A55; --warn:#A35A1F;
+  --f-display:"Gowun Batang","Nanum Myeongjo",serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F151E; --surface:#18212D; --ink:#E6EBF2; --muted:#9AA6B6; --line:#2A3544;
+  --brand:#1B2C47; --brand-ink:#F1F4F8; --accent:#D9A15A; --chip:#223047; --chip-ink:#D7E2F2;
+  --user:#355483; --user-ink:#FFFFFF; --ok:#6BC59A; --warn:#E3A266; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F151E; --surface:#18212D; --ink:#E6EBF2; --muted:#9AA6B6; --line:#2A3544;
+  --brand:#1B2C47; --brand-ink:#F1F4F8; --accent:#D9A15A; --chip:#223047; --chip-ink:#D7E2F2;
+  --user:#355483; --user-ink:#FFFFFF; --ok:#6BC59A; --warn:#E3A266; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;
+  word-break:keep-all;overflow-wrap:anywhere;display:flex;flex-direction:column}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+button,textarea,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.inner{max-width:760px;margin:0 auto;width:100%}
+
+/* 헤더 */
+header{background:var(--brand);color:var(--brand-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-block:18px 14px}
+.kicker{font-size:13px;opacity:.78;letter-spacing:.04em}
+h1{font-family:var(--f-display);font-size:26px;line-height:1.25;margin:2px 0 4px;text-wrap:balance}
+.tag{font-size:14px;opacity:.85}
+.head-btns{display:flex;gap:6px;flex-shrink:0}
+.hbtn{background:transparent;border:1px solid color-mix(in srgb,var(--brand-ink) 35%,transparent);color:var(--brand-ink);
+  border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap}
+.hbtn:hover{background:color-mix(in srgb,var(--brand-ink) 12%,transparent)}
+/* 건반 띠: 7개 흰건반 중 5개 검은건반 패턴 */
+.keys{height:10px;background:
+  linear-gradient(90deg,transparent 0 9%,var(--ink) 9% 13%,transparent 13% 23%,var(--ink) 23% 27%,transparent 27% 52%,var(--ink) 52% 56%,transparent 56% 66%,var(--ink) 66% 70%,transparent 70% 80%,var(--ink) 80% 84%,transparent 84%) 0 0/84px 6px repeat-x,
+  repeating-linear-gradient(90deg,#F7F7F4 0 11px,#C9CED6 11px 12px);border-top:2px solid var(--accent)}
+
+/* 대화 */
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.feed{display:flex;flex-direction:column;gap:14px;padding-block:18px 24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.hello p{margin:0}
+.hello .big{font-size:17px}
+.hello strong{color:var(--brand)}
+:root[data-theme="dark"] .hello strong{color:var(--accent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hello strong{color:var(--accent)}}
+.today-btn{display:flex;align-items:center;gap:10px;width:100%;margin-top:14px;padding:14px 16px;border-radius:14px;
+  border:0;background:var(--brand);color:var(--brand-ink);text-align:left}
+.today-btn b{display:block;font-size:16px}
+.today-btn span{font-size:13px;opacity:.85}
+.group{margin-top:16px}
+.group h2{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.06em;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid color-mix(in srgb,var(--chip-ink) 30%,transparent);background:var(--chip);color:var(--chip-ink);
+  border-radius:999px;padding:8px 14px;font-size:15px;font-weight:500;line-height:1.3}
+.chip:hover{border-color:var(--chip-ink)}
+.chip small{font-weight:400;opacity:.7}
+
+.msg{display:flex;flex-direction:column;gap:6px;min-width:0}
+.msg.user{align-items:flex-end}
+.bubble{max-width:92%;border-radius:var(--r);padding:12px 16px;min-width:0}
+.user .bubble{background:var(--user);color:var(--user-ink);border-bottom-right-radius:4px;white-space:pre-wrap}
+.bot .bubble{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px;max-width:100%;width:100%}
+.mode-tag{font-size:12px;color:var(--muted)}
+.user .mode-tag{text-align:right}
+.thinking{color:var(--muted);display:flex;align-items:center;gap:8px}
+.dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:3px;animation:b 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion: reduce){.dots span{animation:none;opacity:.7}}
+
+/* 답변 본문(마크다운) */
+.md{font-size:15.5px}
+.md>*:first-child{margin-top:0}.md>*:last-child{margin-bottom:0}
+.md h3{font-size:17px;margin:20px 0 8px;color:var(--brand);line-height:1.4}
+.md h4{font-size:15.5px;margin:16px 0 6px}
+:root[data-theme="dark"] .md h3{color:var(--accent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .md h3{color:var(--accent)}}
+.md p{margin:0 0 10px}
+.md ul,.md ol{margin:0 0 10px;padding-left:22px}
+.md li{margin:2px 0}
+.md blockquote{margin:0 0 10px;padding:8px 12px;border-left:3px solid var(--accent);background:var(--bg);border-radius:0 8px 8px 0}
+.md hr{border:0;border-top:1px dashed var(--line);margin:16px 0}
+.md pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto;
+  white-space:pre-wrap;font-size:13.5px;margin:0 0 10px}
+.md code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em}
+.md .ph{background:color-mix(in srgb,var(--accent) 20%,transparent);border-radius:4px;padding:0 3px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--ink)}
+.tbtn:hover{border-color:var(--brand)}
+.tbtn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.err{color:var(--warn);font-size:14px}
+.note{font-size:13px;color:var(--muted)}
+
+/* 입력 */
+footer{background:var(--surface);border-top:1px solid var(--line);padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.mode-bar{display:flex;align-items:center;gap:8px;padding-top:8px;font-size:13px;color:var(--muted)}
+.mode-pill{background:var(--chip);color:var(--chip-ink);border-radius:999px;padding:2px 10px;font-weight:600}
+.mode-x{border:0;background:none;color:var(--muted);font-size:13px;text-decoration:underline;padding:0}
+.compose{display:flex;gap:8px;align-items:flex-end;padding-top:8px}
+.compose textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:14px;
+  padding:12px 14px;max-height:40vh;min-height:50px;line-height:1.5}
+.icon-btn{flex-shrink:0;width:46px;height:50px;border-radius:14px;border:1px solid var(--line);background:var(--bg);font-size:19px}
+.icon-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.send{flex-shrink:0;height:50px;padding:0 18px;border-radius:14px;border:0;background:var(--brand);color:var(--brand-ink);font-weight:700;font-size:16px}
+.send[disabled]{opacity:.5;cursor:default}
+.attach-row{display:flex;gap:8px;align-items:center;padding-top:8px;font-size:13px;color:var(--muted)}
+.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--line)}
+
+/* 시트(정보 카드 · 보관함) */
+.sheet-wrap{position:fixed;inset:0;z-index:20;background:rgba(10,15,25,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);color:var(--ink);width:100%;max-width:760px;max-height:88vh;overflow-y:auto;border-radius:20px 20px 0 0;
+  padding-block:20px calc(20px + env(safe-area-inset-bottom,0px))}
+.sheet h2{font-family:var(--f-display);font-size:21px;margin:0 0 6px}
+.sheet .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sheet textarea{width:100%;min-height:52vh;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;font-size:14px;line-height:1.6}
+.arch{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.arch-item{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.arch-item .t{font-weight:600}
+.arch-item .d{font-size:12px;color:var(--muted)}
+.arch-item pre{white-space:pre-wrap;font-family:var(--f-body);font-size:14px;margin:8px 0 0;max-height:220px;overflow:auto;background:var(--bg);padding:10px;border-radius:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);
+  padding:8px 16px;border-radius:999px;font-size:14px;z-index:30}
+
+@media (min-width:700px){
+  h1{font-size:30px}
+  .bubble{max-width:80%}
+}
+</style>
+
+<header>
+  <div class="gut"><div class="inner head">
+    <div>
+      <div class="kicker">세종 아름동 · 브레아노 피아노학원</div>
+      <h1>브레아노 AI 비서</h1>
+      <div class="tag">피아노를 가르치기 전에, 아이의 성장 엔진을 설계합니다</div>
+    </div>
+    <div class="head-btns">
+      <button class="hbtn" id="btnArchive" type="button">보관함</button>
+      <button class="hbtn" id="btnCard" type="button">학원 정보</button>
+      <button class="hbtn" id="btnNew" type="button">새 대화</button>
+    </div>
+  </div></div>
+  <div class="keys" aria-hidden="true"></div>
+</header>
+
+<main id="main">
+  <div class="gut"><div class="inner feed" id="feed"></div></div>
+</main>
+
+<footer>
+  <div class="gut"><div class="inner">
+    <div class="mode-bar" id="modeBar" hidden>
+      <span>작업:</span><span class="mode-pill" id="modeName"></span>
+      <button class="mode-x" id="modeClear" type="button">자유 대화로</button>
+    </div>
+    <div class="attach-row" id="attachRow" hidden>
+      <img class="thumb" id="thumb" alt="첨부한 사진 미리보기">
+      <span id="attachName">사진 1장 첨부됨</span>
+      <button class="mode-x" id="attachClear" type="button">빼기</button>
+    </div>
+    <form class="compose" id="form">
+      <button class="icon-btn" id="btnPhoto" type="button" title="사진 올리기 (수업·연주회 사진으로 글 쓰기)" aria-label="사진 올리기" hidden>📷</button>
+      <input type="file" id="file" accept="image/*" hidden>
+      <button class="icon-btn" id="btnMic" type="button" title="말로 부탁하기" aria-label="말로 부탁하기" hidden>🎙</button>
+      <textarea id="input" rows="1" placeholder="예: 겨울방학 특강 홍보글 써줘" aria-label="부탁할 내용"></textarea>
+      <button class="send" id="send" type="submit">보내기</button>
+    </form>
+  </div></div>
+</footer>
+
+<div class="sheet-wrap" id="cardSheet" hidden>
+  <div class="sheet gut" role="dialog" aria-modal="true" aria-labelledby="cardTitle"><div class="inner">
+    <h2 id="cardTitle">학원 정보 카드</h2>
+    <p class="note">비서는 이 카드에 적힌 사실만 사용해요. 형용사 대신 '하는 일'과 학부모가 실제로 한 말을 적을수록 글이 좋아집니다. 이 기기에 저장돼요.</p>
+    <textarea id="cardText" aria-label="학원 정보 카드 내용"></textarea>
+    <div class="row">
+      <button class="tbtn primary" id="cardSave" type="button">저장</button>
+      <button class="tbtn" id="cardReset" type="button">처음 내용으로</button>
+      <button class="tbtn" id="cardClose" type="button">닫기</button>
+    </div>
+  </div></div>
+</div>
+
+<div class="sheet-wrap" id="archSheet" hidden>
+  <div class="sheet gut" role="dialog" aria-modal="true" aria-labelledby="archTitle"><div class="inner">
+    <h2 id="archTitle">보관함</h2>
+    <p class="note">마음에 든 결과를 '보관'하면 여기 모여요. 이 기기 브라우저에만 저장됩니다.</p>
+    <div class="arch" id="archList"></div>
+    <div class="row"><button class="tbtn" id="archClose" type="button">닫기</button></div>
+  </div></div>
+</div>
+
+<script>
+/* ============================================================
+   1. 학원 정보 카드 (기본값) — 화면의 '학원 정보'에서 고칠 수 있어요
+   ============================================================ */
+const DEFAULT_CARD = `[브레아노 정보 카드]
+학원명: 세종 브레아노 피아노학원 (줄여서 '브레아노')
+위치: 세종시 아름동
+대상: 유치부(6~7세) · 초등부 · 성인 — 초등 저학년이 가장 많음
+원장: 피아노 교재를 직접 집필한 원장이 상담부터 진도 설계까지 직접 함께함
+철학: "피아노를 가르치기 전에, 아이의 성장 엔진을 설계한다" / 머리는 명석하고 삶은 행복한 아이
+브랜드 목표: 행복한 브레아노 — 원장도 아이도 행복한 학원
+
+강점 (형용사 말고 '하는 일'):
+- 원장이 직접 쓴 교재의 단계별 기준으로 아이의 현재 수준을 먼저 확인하고, 다음 목표를 구체적으로 안내함
+- 매 수업 아이 단계에 맞는 연습 목표(곡·마디)를 정리해 드림
+- 학원 안 작은음악회·연주회, 희망 시 콩쿠르 도전으로 무대 경험과 자신감을 쌓음
+- 이론·악보 읽기를 레슨과 함께 해서 혼자 악보를 읽는 힘을 기름
+
+학부모가 실제로 한 말 (이름은 절대 쓰지 않음):
+- "음악을 사랑하시고, 사랑하도록 가르치시는 곳이에요"
+- "콩쿨을 통해 정말 많이 성장하고, 아이에게서 몰랐던 모습을 발견했어요"
+- "집에서 일어나자마자 피아노 치고, 자러 가기 전에도 피아노를 쳐요"
+- "늘 피아노 학원에 가는 걸 즐거워해요"
+- "작은음악회가 자주 열려서 다른 사람 앞에 서 보는 경험을 많이 했으면 좋겠어요"
+
+학부모가 자주 하는 걱정·질문:
+- 몇 살에 시작하는 게 좋은지 / 다른 학원에서 옮기면 처음부터 다시 하는지
+- 아이가 그만두고 싶다고 할 때 / 집에서 하루 몇 분 연습하면 되는지
+- 체르니는 언제 시작하는지 / 성인이 다시 시작해도 되는지
+
+상담 신청: 브레아노 상담신청서(구글폼) 또는 전화 010-5034-9517
+지금 알리고 싶은 것: 겨울방학 특강 · 연말 작은음악회 · 2027 신학기 상담 예약
+홍보에 쓰지 않을 것: 교습비 금액, 아이 실명·얼굴, 특정 학교 이름, 확인 안 된 숫자·수상 실적
+말투: 따뜻하고 차분하게. 원장 1인칭("저는"), 학부모에게 존댓말
+지역 키워드: 아름동 피아노학원, 세종 피아노학원, 세종시 초등 피아노, 세종 성인피아노, 아름동 유치부 피아노
+SNS: 네이버 블로그(매일 1편), 인스타그램, 스레드(원장님 대상 '학원운영' 글), 네이버 플레이스, 카카오톡`;
+
+/* ============================================================
+   2. 비서 공통 규칙
+   ============================================================ */
+const RULES = (card, today) => `당신은 "세종 브레아노 피아노학원" 원장님의 전속 AI 홍보·운영 비서입니다. 원장님이 짧게 부탁해도 원장님 대신 바로 쓸 수 있는 완성본을 만들어 업무를 덜어 드리는 것이 일입니다.
+
+오늘 날짜: ${today} (계절·방학·학기 일정을 자연스럽게 반영)
+
+${card}
+
+[반드시 지킬 규칙]
+1. 위 정보 카드에 있는 사실만 씁니다. 카드에 없는 숫자·기간·수상·후기·교재명은 절대 지어내지 말고 [원장님 입력: 무엇] 자리표시로 남깁니다.
+2. 피아노를 팔지 말고 아이의 변화를 팝니다. "1:1 맞춤", "기초부터 탄탄", "콩쿠르 전문", "체계적 커리큘럼" 같은 흔한 말 대신, 아이에게 생기는 변화(집중력·자신감·표현력·끝까지 해내는 힘·무대 경험)와 구체적인 수업 장면으로 씁니다.
+3. 학부모의 걱정을 먼저 알아주고 → 해결 방법 → 부담 없는 상담 연결 순서로 씁니다. 등록 압박, 과장, 비교 비방은 하지 않습니다.
+4. 무료 체험수업은 "우리 아이 피아노 시작 진단"처럼 진단형으로 표현합니다.
+5. 아이 실명·얼굴·교습비·특정 학교 이름은 쓰지 않습니다. 원장님이 이번 대화에 아이 이름을 주면 그 학부모에게 보내는 개인 메시지 안에서만 씁니다.
+6. 결과물은 복사해서 바로 붙여 넣을 수 있게 씁니다. 앞뒤 인사말·설명은 빼고, 필요하면 마지막에 "✔ 다음에 할 일:" 한 줄만 붙입니다.
+7. 원장님 요청이 짧거나 모호해도 되묻지 말고 가장 그럴듯한 해석으로 먼저 완성본을 씁니다. 정말 필요한 확인은 끝에 질문 1개만.
+8. 채널 형식을 지킵니다: 블로그는 네이버 SEO(제목·소제목에 지역 키워드), 인스타·카톡은 짧은 줄 바꿈, 이모지는 채널에 맞게 적당히.
+9. 마크다운으로 정리합니다: ### 소제목, - 목록, **굵게**. 그대로 복사할 문구 덩어리는 > 인용이 아니라 일반 문단으로 쓰고, 영어 이미지 프롬프트만 \`\`\` 코드블록에 넣습니다.`;
+
+/* ============================================================
+   3. 작업 목록 — 버튼 하나 = 원장님 업무 하나
+   ============================================================ */
+const MODES = {
+  today:{e:"☀️",n:"오늘 홍보 한 번에",send:"오늘 올릴 홍보 세트를 한 번에 만들어 주세요.",
+    g:`오늘 하루치 홍보 세트를 만듭니다. 다음 4개를 순서대로, 서로 주제를 연결해서 쓰세요.
+### ① 네이버 블로그 — 오늘의 주제와 제목 3개, 메인 키워드, 소제목 5개 개요(본문은 원장님이 원하면 다음에)
+### ② 인스타그램 피드 캡션 1개 (8~12줄, 해시태그 10개)
+### ③ 스레드 짧은 글 1개 (학부모 대상, 5~7줄, 공감형 첫 문장)
+### ④ 재원생 학부모 카톡 한 줄 소식 (2~3줄)
+마지막에 오늘 찍으면 좋은 사진·영상 컷 3개를 체크리스트로.`},
+
+  blog:{e:"📝",n:"네이버 블로그 원고",tpl:"주제: \n(비워 두면 시즌에 맞게 골라 드려요)",
+    g:`네이버 블로그 원고를 아래 형식 그대로 씁니다.
+### 🔑 키워드 — 메인 키워드 1개(지역 키워드 중), 서브 키워드 4개
+### 📝 제목 후보 3개 — 메인 키워드를 앞쪽에, 질문형·숫자형 섞기
+### 🔎 메타 설명 — 120자 안팎
+### 📄 본문 — 1,800~2,300자. 첫 문단은 학부모가 실제로 하는 질문으로 시작. "한 줄 요약" 문단. 소제목은 질문형으로 4~5개, 메인 키워드를 본문에 5~7회 자연스럽게. 마지막 소제목은 "세종 브레아노 피아노학원은 어떻게 하나요?" 류로 학원 이야기. 중간에 [원장님 실제 사례 입력: …] 자리표시 1개.
+### ❓ 자주 묻는 질문 3개 (Q/A)
+### 하단 정보 한 줄 — 세종 브레아노 피아노학원 | 세종시 아름동 | 유치부·초등부·성인 피아노 | 상담 010-5034-9517
+### #️⃣ 해시태그 10개
+### 🖼️ 이미지 3장 — 들어갈 위치, 영어 이미지 프롬프트(코드블록, 얼굴 안 보이게, no text, no logos), 한글 alt
+### ✅ 게시 전 체크리스트 (- [ ] 형식)`},
+
+  insta:{e:"📸",n:"인스타 카드뉴스",tpl:"주제: \n(예: 집에서 연습 안 하는 아이, 혼내기 전에)",
+    g:`인스타그램 카드뉴스(캐러셀)를 만듭니다.
+### 슬라이드 7장 — 장마다 [큰 제목 한 줄 / 작은 설명 1~2줄]. 1장은 학부모 속마음을 찌르는 훅, 마지막 장은 저장·상담 유도.
+### 캡션 — 첫 줄 훅, 8~12줄, 마지막에 상담 안내
+### 해시태그 15개 (지역 5 + 주제 10)
+### 디자인 메모 — 배경 톤, 글자 강조 위치 한 줄씩`},
+
+  reels:{e:"🎬",n:"릴스·쇼츠 대본",tpl:"찍을 장면/주제: \n(예: 7살이 처음 양손으로 친 날)",
+    g:`릴스/쇼츠 대본을 10초 버전과 30초 버전 두 개로 씁니다. 각 버전은 표로: 시간(초) | 화면(무엇을 찍나, 아이 얼굴 안 나오게 손·건반·뒷모습) | 자막 | 소리. 첫 2초 훅 자막은 3가지 후보. 촬영 팁 3줄, 캡션 3줄, 해시태그 8개.`},
+
+  threads:{e:"🧵",n:"스레드 글",tpl:"대상: 학부모 / 원장님 중 선택\n주제: ",
+    g:`스레드(Threads) 글 세트를 씁니다.
+### 훅 (첫 줄 후보 3개, 25자 이내)
+### 메인 글 (8~12줄, 짧은 줄 바꿈, 경험담 톤)
+### 이어지는 답글 2개 (각 3~5줄, 실전 팁)
+### 댓글 유도 질문 1줄
+### 이미지 프롬프트 1개 (영어, 코드블록)
+대상이 '원장님'이면 브레아노 원장이 동료 원장님께 학원운영 노하우를 나누는 톤, '학부모'면 아이 키우는 부모 공감 톤.`},
+
+  place:{e:"📍",n:"플레이스 소식·리뷰 답글",tpl:"할 일: 플레이스 소식 / 리뷰 답글 중 선택\n리뷰 내용(답글일 때 붙여 넣기): ",
+    g:`네이버 플레이스용 글을 씁니다. '소식'이면 300자 안팎 소식글 + 제목 + 사진 추천 2컷. '리뷰 답글'이면 리뷰 내용에 구체적으로 반응하는 답글 2가지 버전(짧게 3줄 / 따뜻하게 5줄). 리뷰 속 아이 이름은 답글에 쓰지 말고, 아쉬운 리뷰면 변명 없이 사과·개선·상담 연결.`},
+
+  copy:{e:"✨",n:"차별화 문구 뽑기",send:"브레아노만의 차별화 문구를 뽑아 주세요.",
+    g:`브레아노 차별화 문구를 만듭니다.
+### 한 문장 포지셔닝 5개 (대상 + 문제 + 변화가 들어가게)
+### 흔한 문구 → 브레아노식 바꾼 문구 8쌍 (표)
+### 간판·현수막용 10자 이내 5개
+### 인스타 프로필 소개 3줄 버전 2개
+### 상담 첫마디 3개`},
+
+  event:{e:"🎄",n:"특강·이벤트 모집",tpl:"이벤트: \n(예: 겨울방학 특강 / 12월 작은음악회 / 신학기 진단 상담 주간)\n기간·대상·정원: ",
+    g:`이벤트 모집 홍보 세트를 씁니다.
+### 이벤트 이름 후보 3개 (진단·변화 중심)
+### 전단·포스터 문구 (헤드라인 / 서브 / 혜택·내용 3줄 / 신청 방법)
+### 블로그용 안내글 (900자)
+### 인스타 캡션
+### 재원생 학부모 카톡 안내
+### 신청 마감 임박 리마인드 문자
+모르는 날짜·정원·비용은 [원장님 입력] 자리표시로.`},
+
+  calendar:{e:"📅",n:"한 달 홍보 캘린더",send:"이번 달과 다음 달 초까지 홍보 캘린더를 짜 주세요.",
+    g:`오늘부터 4주 홍보 캘린더를 만듭니다. 주별 표: 날짜 | 채널(블로그·인스타·스레드·플레이스·카톡) | 주제 | 목적(신규 문의/재등록/소개). 블로그는 매일, 지역 키워드를 돌려 가며. 방학·연말·신학기 시즌 이벤트를 반영하고, 주 1회 '아이 변화 사례' 콘텐츠를 넣으세요. 마지막에 이번 달 꼭 할 일 5개.`},
+
+  report:{e:"📈",n:"주간 성장 리포트",tpl:"아이: (예: 2학년 지우)\n이번 주 배운 것: \n좋아진 점: \n아직 어려워하는 점: \n다음 목표: ",
+    g:`재원생 학부모에게 보내는 주간 성장 리포트 카톡을 씁니다. 구성: 인사 1줄 → 이번 주 배운 것 → 좋아진 점(구체적 장면) → 아직 어려워하는 점(걱정 아닌 과정으로) → 다음 수업 목표 → 집에서 도와줄 한 가지(하루 5분 수준). 6~9줄. 버전 2개: 기본 / 더 짧게(3줄). 영상과 함께 보낼 한 줄 코멘트도 1개.`},
+
+  diag:{e:"🎯",n:"체험 진단 리포트",tpl:"아이: (예: 7세, 처음 배움)\n관찰한 것: (긴장도, 리듬 반응, 손가락 힘, 집중 시간, 칭찬 반응 등)\n부모님이 바라는 것: ",
+    g:`'우리 아이 피아노 시작 진단' 후 학부모에게 드리는 A4 한 장 리포트를 씁니다.
+### 1. 오늘 본 아이의 모습
+### 2. 강점
+### 3. 보완하면 좋은 점
+### 4. 추천 수업 방향 (첫 4주 계획)
+### 5. 집에서 도와줄 한 가지
+### 상담 마무리 멘트 (등록 압박 없이)
+### 진단 다음 날 보낼 카톡`},
+
+  consult:{e:"📞",n:"상담 대본·후속 문자",tpl:"상황: (예: 전화 문의 / 방문 상담 / 다른 학원에서 옮기려는 초3)\n학부모 걱정: ",
+    g:`상담을 대신 준비합니다.
+### 첫 30초 멘트
+### 아이를 파악하는 질문 6개 (진단형)
+### 학부모 걱정별 답변 (걱정 → 공감 → 브레아노 방식)
+### 교습비 질문을 받았을 때 (금액 대신 [원장님 입력], 가치 먼저 설명하는 흐름)
+### 상담 당일 저녁 감사 문자
+### 3일 뒤 미등록 학부모 부드러운 후속 문자
+### 등록 확정 환영 문자`},
+
+  notice:{e:"📢",n:"카톡 공지·안내",tpl:"공지 종류: (예: 휴원 / 보강 / 연주회 / 원비 납부 / 시간표 조사 / 방학 일정)\n내용: ",
+    g:`재원생 학부모 단체 카톡 공지를 씁니다. 제목 줄 → 핵심 3줄(날짜·대상·할 일) → 부드러운 마무리. 버전 2개: 공식 / 다정하게. 회신이 필요하면 회신 방법을 분명히. 원비·환불 관련은 규정 문구 자리에 [원장님 입력].`},
+
+  retention:{e:"🤝",n:"그만둔다는 연락 답장",tpl:"받은 메시지: \n아이 상황: ",
+    g:`"그만두려고요 / 쉬려고요" 연락에 대한 답장을 씁니다. 붙잡기·죄책감 주기 금지. 구성: 감사와 존중 → 아이가 그동안 달라진 점 1가지(정보 없으면 자리표시) → 진짜 이유를 묻는 열린 질문 → 대안(진도 조절·곡 바꾸기·주 횟수 조정·잠시 쉬었다 복귀) → 어떤 결정이든 응원. 버전 2개(카톡 / 통화 대본). 마지막에 원장님이 통화에서 확인할 체크포인트 3개.`},
+
+  review:{e:"⭐",n:"후기·소개 요청",send:"재원생 학부모님께 후기와 소개를 부탁하는 메시지를 써 주세요.",
+    g:`후기·소개 요청 세트를 씁니다.
+### 후기 요청 카톡 (부담 없이, 질문 3개 포함: 처음 고민 / 아이 변화 / 가장 만족한 순간)
+### 네이버 리뷰 요청 문구 (짧은 버전)
+### 소개 요청 문구 — "등록 권유 말고 아이 시작 진단만 받아 보게 해 주세요" 톤
+### 소개 감사 선물 아이디어 5개 (할인 말고 교육적 가치: 연주 영상 편집, 연습 체크표 등)
+### 받은 후기를 블로그·인스타용으로 다듬는 법 3줄`},
+
+  photo:{e:"🖼️",n:"사진으로 글쓰기",tpl:"사진 설명(사진을 올리거나 적어 주세요): \n어디에 올릴지: 인스타 / 블로그 / 카톡",
+    g:`원장님이 올린 사진(또는 사진 설명)을 보고 글을 씁니다. 사진 속 아이 얼굴이 보이면 "얼굴 가리기 필요"라고 먼저 알려 주세요. 인스타 캡션 2버전, 블로그 문단 1개, 재원생 학부모 카톡 1개.`},
+
+  image:{e:"🎨",n:"이미지 프롬프트",tpl:"용도: (예: 블로그 대표 이미지 / 겨울 특강 포스터 / 인스타 배경)\n분위기: ",
+    g:`AI 이미지 생성용 프롬프트 5개를 씁니다. 각각: 제목(한글) / 영어 프롬프트(코드블록; 장면·빛·색감·스타일·비율 포함, faces not visible, no text, no logos, no brand names) / 추천 용도. 피아노학원·아이·계절 감성.`},
+};
+
+const GROUPS = [
+  {t:"홍보 만들기", ids:["blog","insta","reels","threads","place","copy","event","calendar","image"]},
+  {t:"학부모 소통 · 업무 대행", ids:["report","diag","consult","notice","retention","review","photo"]},
+];
+const FOLLOWUPS = ["더 짧게","더 따뜻하게","다른 버전으로","제목만 10개 더","카톡용으로 바꿔줘"];
+
+/* ============================================================
+   4. 상태와 저장 (이 기기에만)
+   ============================================================ */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("breano:"+k); return v == null ? d : JSON.parse(v); }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem("breano:"+k, JSON.stringify(v)); }catch{} },
+};
+let card = store.get("card", DEFAULT_CARD);
+let turns = store.get("turns", []);        // [{role, content, show, mode}]
+let archive = store.get("archive", []);    // [{t, d, text}]
+let mode = null, busy = false, ctl = null, sample = null, attached = null, canImages = false;
+
+const $ = id => document.getElementById(id);
+const feed = $("feed"), input = $("input"), send = $("send");
+const todayStr = () => new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+
+/* ============================================================
+   5. 마크다운 → 화면
+   ============================================================ */
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function inline(s){
+  return esc(s)
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/`([^`]+)`/g,"<code>$1</code>")
+    .replace(/\[(원장님 입력[^\]]*|원장님 실제[^\]]*)\]/g,'<span class="ph">[$1]</span>');
+}
+function md(src){
+  const lines = src.replace(/\r/g,"").split("\n");
+  let out = [], list = null, para = [], i = 0;
+  const flushP = () => { if (para.length){ out.push("<p>"+para.map(inline).join("<br>")+"</p>"); para = []; } };
+  const flushL = () => { if (list){ out.push(`<${list.t}>`+list.items.map(x=>"<li>"+x+"</li>").join("")+`</${list.t}>`); list = null; } };
+  while (i < lines.length){
+    const l = lines[i];
+    if (/^```/.test(l)){
+      flushP(); flushL(); const buf = []; i++;
+      while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
+      out.push("<pre><code>"+esc(buf.join("\n"))+"</code></pre>"); i++; continue;
+    }
+    if (/^\s*$/.test(l)){ flushP(); flushL(); i++; continue; }
+    let m;
+    if ((m = l.match(/^#{1,3}\s+(.*)/))){ flushP(); flushL(); out.push("<h3>"+inline(m[1])+"</h3>"); i++; continue; }
+    if ((m = l.match(/^#{4,6}\s+(.*)/))){ flushP(); flushL(); out.push("<h4>"+inline(m[1])+"</h4>"); i++; continue; }
+    if (/^(-{3,}|\*{3,})$/.test(l.trim())){ flushP(); flushL(); out.push("<hr>"); i++; continue; }
+    if ((m = l.match(/^>\s?(.*)/))){ flushP(); flushL(); out.push("<blockquote>"+inline(m[1])+"</blockquote>"); i++; continue; }
+    if (/^\|.*\|\s*$/.test(l)){
+      flushP(); flushL(); const rows = [];
+      while (i < lines.length && /^\|.*\|\s*$/.test(lines[i])){ rows.push(lines[i]); i++; }
+      const cells = r => r.trim().replace(/^\||\|$/g,"").split("|").map(c=>c.trim());
+      const body = rows.filter(r => !/^\|[\s:|-]+\|$/.test(r.trim()));
+      out.push('<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:14px;min-width:100%">'+
+        body.map((r,ri)=>"<tr>"+cells(r).map(c=>`<${ri?"td":"th"} style="border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top">${inline(c)}</${ri?"td":"th"}>`).join("")+"</tr>").join("")+"</table></div>");
+      continue;
+    }
+    if ((m = l.match(/^\s*[-*]\s+\[( |x)\]\s+(.*)/i))){ flushP(); if (!list || list.t!=="ul"){ flushL(); list={t:"ul",items:[]}; } list.items.push((m[1].trim()?"☑ ":"☐ ")+inline(m[2])); i++; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))){ flushP(); if (!list || list.t!=="ul"){ flushL(); list={t:"ul",items:[]}; } list.items.push(inline(m[1])); i++; continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))){ flushP(); if (!list || list.t!=="ol"){ flushL(); list={t:"ol",items:[]}; } list.items.push(inline(m[1])); i++; continue; }
+    flushL(); para.push(l); i++;
+  }
+  flushP(); flushL();
+  return out.join("");
+}
+const plain = s => s.replace(/^#{1,6}\s+/gm,"").replace(/\*\*(.+?)\*\*/g,"$1").replace(/^```\w*\s*$/gm,"").trim();
+
+/* ============================================================
+   6. 화면 그리기
+   ============================================================ */
+function helloCard(){
+  const el = document.createElement("div");
+  el.className = "card hello";
+  el.innerHTML = `
+    <p class="big">원장님, 오늘은 무엇을 맡겨 주실까요?<br>브레아노의 철학과 이야기를 이미 알고 있어요.<br><strong>한 줄만 부탁하셔도</strong> 브레아노답게 완성본으로 써 드려요.</p>
+    <button class="today-btn" type="button" data-mode="today">☀️<div><b>오늘 홍보 한 번에</b><span>블로그 주제 · 인스타 · 스레드 · 학부모 카톡까지 세트로</span></div></button>
+    ${GROUPS.map(g => `<div class="group"><h2>${g.t}</h2><div class="chips">${
+      g.ids.map(id => `<button class="chip" type="button" data-mode="${id}">${MODES[id].e} ${MODES[id].n}</button>`).join("")
+    }</div></div>`).join("")}
+    <p class="note" id="aiNote" style="margin-top:14px"></p>`;
+  el.addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (b) pickMode(b.dataset.mode); });
+  return el;
+}
+function userBubble(t){
+  const w = document.createElement("div"); w.className = "msg user";
+  w.innerHTML = (t.mode ? `<div class="mode-tag">${MODES[t.mode].e} ${MODES[t.mode].n}</div>` : "") + `<div class="bubble"></div>`;
+  w.querySelector(".bubble").textContent = t.show;
+  return w;
+}
+function botBubble(text, opts = {}){
+  const w = document.createElement("div"); w.className = "msg bot";
+  w.innerHTML = `<div class="bubble"><div class="md"></div></div><div class="tools"></div>`;
+  const body = w.querySelector(".md");
+  if (opts.thinking) body.innerHTML = `<div class="thinking"><span class="dots"><span></span><span></span><span></span></span> 쓰는 중이에요… (보통 10~40초)</div>`;
+  else body.innerHTML = md(text);
+  return w;
+}
+function addTools(w, text, last){
+  const tools = w.querySelector(".tools"); tools.innerHTML = "";
+  const mk = (label, fn, cls="") => { const b = document.createElement("button"); b.type="button"; b.className="tbtn "+cls; b.textContent=label; b.onclick=fn; tools.append(b); return b; };
+  mk("복사", () => copy(plain(text)), "primary");
+  mk("보관", () => { saveArchive(text); toast("보관함에 넣었어요"); });
+  if (last) FOLLOWUPS.forEach(f => mk(f, () => submit(f)));
+}
+function render(){
+  feed.innerHTML = ""; feed.append(helloCard());
+  turns.forEach((t, i) => {
+    if (t.role === "user") feed.append(userBubble(t));
+    else { const w = botBubble(t.content); addTools(w, t.content, i === turns.length - 1); feed.append(w); }
+  });
+  aiNote();
+  scrollDown();
+}
+function aiNote(){
+  const n = $("aiNote"); if (!n) return;
+  if (sample === false) n.innerHTML = `지금 이 화면에서는 AI 연결이 꺼져 있어요. claude.ai에서 이 페이지를 열면 바로 써 드려요. 그동안은 '보내기'를 누르면 <b>완성 프롬프트가 복사</b>되니 Claude 채팅에 붙여 넣으세요.`;
+  else n.textContent = "결과는 원장님 Claude 계정으로 만들어져요. 처음 한 번은 사용 허락 창이 떠요.";
+}
+const scrollDown = () => requestAnimationFrame(() => { $("main").scrollTop = $("main").scrollHeight; });
+function toast(t){ const d = document.createElement("div"); d.className="toast"; d.textContent=t; document.body.append(d); setTimeout(()=>d.remove(), 1800); }
+async function copy(t){
+  try { await navigator.clipboard.writeText(t); toast("복사했어요"); }
+  catch { const ta = document.createElement("textarea"); ta.value = t; document.body.append(ta); ta.select();
+    try{ document.execCommand("copy"); toast("복사했어요"); }catch{ toast("길게 눌러 직접 복사해 주세요"); } ta.remove(); }
+}
+
+/* ============================================================
+   7. 작업 선택 · 보내기
+   ============================================================ */
+function pickMode(id){
+  const m = MODES[id];
+  if (m.send){ setMode(id); submit(m.send); return; }
+  setMode(id);
+  input.value = m.tpl || ""; autoGrow(); input.focus();
+  const p = input.value.indexOf(": ") ; if (p > -1){ input.setSelectionRange(p+2, p+2); }
+  if (id === "photo" && canImages) $("file").click();
+}
+function setMode(id){
+  mode = id;
+  $("modeBar").hidden = !id;
+  if (id) $("modeName").textContent = MODES[id].e + " " + MODES[id].n;
+}
+function buildInput(){
+  const head = { role:"user", content: RULES(card, todayStr()) + "\n\n원장님이 곧 부탁을 드립니다. 위 규칙을 계속 지켜 주세요." };
+  const recent = turns.slice(-12).map(t => ({ role:t.role, content:t.content }));
+  if (recent.length && recent[0].role === "assistant") recent.shift();
+  return [head, ...recent];
+}
+async function submit(text){
+  text = (text ?? input.value).trim();
+  if (!text || busy) return;
+  const m = mode ? MODES[mode] : null;
+  const content = (m ? `[작업: ${m.n}]\n작업 지침:\n${m.g}\n\n` : "") + `원장님 요청:\n${text}`;
+  const turn = { role:"user", content, show:text, mode };
+  if (sample === false || sample === null && !window.claude){
+    const full = buildInput().map(t=>t.content).join("\n\n") + "\n\n" + content;
+    copy(full); toast("완성 프롬프트를 복사했어요 — Claude에 붙여 넣으세요"); return;
+  }
+  turns.push(turn); store.set("turns", turns);
+  input.value = ""; autoGrow(); setMode(null);
+  feed.append(userBubble(turn));
+  const w = botBubble("", {thinking:true}); feed.append(w); scrollDown();
+  const tools = w.querySelector(".tools");
+  const stop = document.createElement("button"); stop.type="button"; stop.className="tbtn"; stop.textContent="그만 쓰기"; tools.append(stop);
+  busy = true; send.disabled = true;
+  ctl = new AbortController(); stop.onclick = () => ctl.abort();
+  const body = w.querySelector(".md");
+  const imgs = attached ? [attached] : undefined; clearAttach();
+  try{
+    if (!sample) sample = await window.claude.use("sample");
+    if (!sample) throw { code:"not_granted" };
+    const opts = { cache:false, signal:ctl.signal, onText: ({text}) => { body.innerHTML = md(text); scrollDown(); } };
+    if (imgs) opts.images = imgs;
+    const res = await sample(buildInput(), opts);
+    turns.push({ role:"assistant", content:res.text }); store.set("turns", turns);
+    body.innerHTML = md(res.text);
+    // 이전 답변의 후속 버튼 정리
+    feed.querySelectorAll(".msg.bot .tools").forEach(t => { [...t.children].slice(2).forEach(b => b.remove()); });
+    addTools(w, res.text, true);
+    if (res.truncated) w.querySelector(".tools").insertAdjacentHTML("beforeend", `<span class="note">길어서 중간에 끊겼어요. "이어서 써줘"라고 보내 주세요.</span>`);
+  }catch(e){
+    const kept = e && e.text;
+    if (kept){ turns.push({ role:"assistant", content:kept }); store.set("turns", turns); body.innerHTML = md(kept); addTools(w, kept, true); }
+    else body.innerHTML = "";
+    if (!e || e.code !== "cancelled") body.insertAdjacentHTML("beforeend", `<p class="err">${errText(e && e.code)}</p>`);
+    if (e && (e.code === "not_granted" || e.code === "sampling_disabled")){ sample = false; aiNote(); }
+    if (!kept) { tools.innerHTML = ""; const r = document.createElement("button"); r.type="button"; r.className="tbtn"; r.textContent="다시 시도";
+      r.onclick = () => { turns.pop(); store.set("turns", turns); w.remove(); feed.lastElementChild.remove(); input.value = text; setMode(turn.mode); submit(); }; tools.append(r); }
+  }finally{
+    busy = false; send.disabled = false; stop.remove();
+  }
+}
+function errText(code){
+  return ({
+    not_granted:"AI 사용이 허락되지 않았어요. 페이지의 권한 메뉴에서 허락하시거나, 보내기를 누르면 프롬프트가 복사돼요.",
+    sampling_disabled:"이 계정에서는 Claude를 쓸 수 없어요.",
+    rate_limited:"잠깐 요청이 많았어요. 1~2분 뒤에 다시 보내 주세요.",
+    session_expired:"로그인이 풀렸어요. claude.ai에 다시 로그인해 주세요.",
+    refused:"이 요청은 쓸 수 없었어요. 표현을 바꿔서 부탁해 주세요.",
+    prompt_too_large:"대화가 너무 길어요. '새 대화'를 눌러 주세요.",
+    image_rejected:"이 사진은 쓸 수 없어요. 다른 사진(JPG·PNG)을 올려 주세요.",
+    empty_completion:"답이 비어 있었어요. 조금 더 구체적으로 부탁해 주세요.",
+  })[code] || "연결이 잠깐 끊겼어요. '다시 시도'를 눌러 주세요.";
+}
+
+/* ============================================================
+   8. 입력창 · 사진 · 음성
+   ============================================================ */
+function autoGrow(){ input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, window.innerHeight*0.4) + "px"; }
+input.addEventListener("input", autoGrow);
+input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && window.matchMedia("(min-width:700px)").matches){ e.preventDefault(); submit(); } });
+$("form").addEventListener("submit", e => { e.preventDefault(); submit(); });
+$("modeClear").onclick = () => setMode(null);
+
+$("btnPhoto").onclick = () => $("file").click();
+$("file").onchange = e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  attached = f; $("thumb").src = URL.createObjectURL(f); $("attachRow").hidden = false;
+  if (!mode) setMode("photo");
+  e.target.value = "";
+};
+function clearAttach(){ attached = null; $("attachRow").hidden = true; }
+$("attachClear").onclick = clearAttach;
+
+/* ============================================================
+   9. 정보 카드 · 보관함 · 새 대화
+   ============================================================ */
+function openSheet(id){ $(id).hidden = false; }
+function closeSheet(id){ $(id).hidden = true; }
+["cardSheet","archSheet"].forEach(id => $(id).addEventListener("click", e => { if (e.target.id === id) closeSheet(id); }));
+document.addEventListener("keydown", e => { if (e.key === "Escape"){ closeSheet("cardSheet"); closeSheet("archSheet"); } });
+
+$("btnCard").onclick = () => { $("cardText").value = card; openSheet("cardSheet"); };
+$("cardClose").onclick = () => closeSheet("cardSheet");
+$("cardSave").onclick = () => { card = $("cardText").value.trim() || DEFAULT_CARD; store.set("card", card); closeSheet("cardSheet"); toast("정보 카드를 저장했어요"); };
+$("cardReset").onclick = () => { $("cardText").value = DEFAULT_CARD; };
+
+function saveArchive(text){
+  const first = plain(text).split("\n").find(l => l.trim()) || "결과";
+  archive.unshift({ t:first.slice(0,40), d:new Date().toLocaleString("ko-KR"), text:plain(text) });
+  archive = archive.slice(0, 100); store.set("archive", archive);
+}
+function renderArchive(){
+  const list = $("archList"); list.innerHTML = "";
+  if (!archive.length){ list.innerHTML = `<p class="note">아직 보관한 글이 없어요. 답변 아래 '보관'을 눌러 보세요.</p>`; return; }
+  archive.forEach((a, i) => {
+    const d = document.createElement("div"); d.className = "arch-item";
+    d.innerHTML = `<div class="t"></div><div class="d"></div><pre></pre><div class="row" style="margin-top:8px"></div>`;
+    d.querySelector(".t").textContent = a.t; d.querySelector(".d").textContent = a.d; d.querySelector("pre").textContent = a.text;
+    const row = d.querySelector(".row");
+    const c = document.createElement("button"); c.type="button"; c.className="tbtn primary"; c.textContent="복사"; c.onclick = () => copy(a.text);
+    const x = document.createElement("button"); x.type="button"; x.className="tbtn"; x.textContent="삭제";
+    x.onclick = () => { if (x.dataset.sure){ archive.splice(i,1); store.set("archive", archive); renderArchive(); } else { x.dataset.sure = 1; x.textContent = "한 번 더 누르면 삭제"; } };
+    row.append(c, x); list.append(d);
+  });
+}
+$("btnArchive").onclick = () => { renderArchive(); openSheet("archSheet"); };
+$("archClose").onclick = () => closeSheet("archSheet");
+$("btnNew").onclick = () => { if (ctl) ctl.abort(); turns = []; store.set("turns", turns); setMode(null); clearAttach(); render(); };
+
+/* ============================================================
+   10. 시작
+   ============================================================ */
+render();
+(async () => {
+  if (!window.claude || !window.claude.use){ sample = false; aiNote(); return; }
+  try{
+    const s = await window.claude.use("sample");
+    sample = s || false; aiNote();
+    if (s){
+      const lim = await s.limits().catch(() => null);
+      canImages = !!(lim && lim.images);
+      $("btnPhoto").hidden = !canImages;
+      if (lim && lim.images) $("file").accept = lim.images.mediaTypes.join(",");
+    }
+  }catch{ sample = false; aiNote(); }
+  try{
+    const d = await window.claude.use("dictation");
+    if (d){
+      const mic = $("btnMic"); mic.hidden = false;
+      let base = "";
+      d.onPartial(({text}) => { input.value = base + text; autoGrow(); });
+      d.onFinal(({text}) => { base = base + text + " "; input.value = base; autoGrow(); });
+      d.onState(({state}) => { mic.classList.toggle("on", state === "listening"); });
+      mic.onclick = () => {
+        if (mic.classList.contains("on")){ d.stop().catch(()=>{}); return; }
+        base = input.value ? input.value + " " : "";
+        d.start().catch(e => { if (e && e.code === "not_granted") mic.hidden = true; });
+      };
+    }
+  }catch{}
+})();
+</script>
