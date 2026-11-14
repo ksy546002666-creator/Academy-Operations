@@ -166,7 +166,23 @@ footer{background:var(--surface);border-top:1px solid var(--line);padding-bottom
 .send[disabled]{opacity:.5}
 .attach-row{display:flex;gap:8px;align-items:center;padding-bottom:6px;font-size:13px;color:var(--muted)}
 .thumb{width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line)}
-nav.tabs{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line)}
+nav.tabs{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line)}
+.flow{display:grid;gap:6px;counter-reset:f;margin:0;padding:0;list-style:none}
+.flow li{counter-increment:f;display:flex;gap:10px;align-items:flex-start;font-size:14.5px}
+.flow li::before{content:counter(f);flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.play{display:grid;gap:10px}
+@media (min-width:640px){.play{grid-template-columns:1fr 1fr}}
+.pc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pc .t{font-weight:700}
+.pc .who{font-size:12px;color:var(--muted)}
+.pc .m{font-size:12.5px;color:var(--muted)}
+.pc .row{margin-top:auto}
+.camp{background:var(--brand);color:var(--brand-ink);border-radius:var(--r);padding:14px 16px;display:grid;gap:6px}
+.camp .tag{font-weight:700;color:var(--accent)}
+.camp .btn{background:var(--brand-ink);color:var(--brand);border-color:var(--brand-ink)}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:6px 0;border-bottom:1px solid var(--line)}
+.chk:last-child{border-bottom:0}
+.chk input{margin-top:4px}
 nav.tabs button{border:0;background:none;padding:7px 2px 8px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1px}
 nav.tabs button b{font-size:18px;font-weight:400;line-height:1.2}
 nav.tabs button.on{color:var(--brand);font-weight:700}
@@ -200,6 +216,7 @@ nav.tabs .badge{display:inline-block;min-width:16px;height:16px;border-radius:99
     <section class="view" id="v-chat" hidden></section>
     <section class="view" id="v-leads" hidden></section>
     <section class="view" id="v-students" hidden></section>
+    <section class="view" id="v-viral" hidden></section>
     <section class="view" id="v-hq" hidden></section>
   </div></div>
 </main>
@@ -221,6 +238,7 @@ nav.tabs .badge{display:inline-block;min-width:16px;height:16px;border-radius:99
     <button type="button" data-tab="chat"><b>✎</b>비서</button>
     <button type="button" data-tab="leads"><b>☏</b>상담</button>
     <button type="button" data-tab="students"><b>♪</b>재원생</button>
+    <button type="button" data-tab="viral"><b>➚</b>확산</button>
     <button type="button" data-tab="hq"><b>⌂</b>본사</button>
   </nav>
 </footer>
@@ -298,7 +316,8 @@ ${branch}
 4. 요청이 짧아도 되묻지 말고 가장 그럴듯한 해석으로 먼저 완성본을 씁니다. 확인할 것은 끝에 질문 1개만.
 5. 채널 형식을 지킵니다(블로그 SEO, 인스타·카톡 짧은 줄 바꿈). 이모지는 채널에 맞게 적당히.
 6. 마크다운: ### 소제목, - 목록, **굵게**, 표는 | 형식. 영어 이미지 프롬프트만 \`\`\` 코드블록.
-7. 학부모 개인 메시지 안에서만 원장님이 준 아이 호칭을 씁니다. 공개 글에는 절대 쓰지 않습니다.`;
+7. 학부모 개인 메시지 안에서만 원장님이 준 아이 호칭을 씁니다. 공개 글에는 절대 쓰지 않습니다.
+8. [법·안전] 아이가 나오는 사진·영상은 보호자 서면 동의(만 14세 미만은 법정대리인)와 아이 본인의 동의를 전제로 하고, 얼굴이 안 보이는 구도를 기본으로 제안합니다. 협찬·체험단·대가가 있는 글은 제목이나 첫 줄에 한글로 "협찬"·"광고"를 표시하게 합니다. "입상 보장", "무조건 실력 향상" 같은 결과 보장·과장 표현은 쓰지 않습니다(학원법상 과대·거짓 광고). 맘카페 등 커뮤니티에 광고를 후기처럼 위장하는 방법은 절대 제안하지 않습니다.`;
 
 /* =====================================================================
    1. 작업(버튼) 목록
@@ -376,13 +395,90 @@ const MODES = {
   seminar:{e:"🎤",n:"사업설명회 대본",send:"원장님 대상 브레아노 사업설명회 30분 대본을 써 주세요.",
     g:`원장님 대상 사업설명회 30분 대본. 시간표(분) | 슬라이드 제목 | 말할 내용. 오프닝 공감 스토리, 문제 정의(홍보는 하는데 등록이 안 됨), 브레아노 방식, 운영 시스템 시연, 사례([원장님 입력]), 가맹 절차, Q&A 예상 질문 8개와 답.`},
 };
+Object.assign(MODES, {
+  viralplan:{e:"🚀",n:"전국 바이럴 90일 계획",send:"브레아노를 전국에 알리는 90일 바이럴 계획을 세워 주세요.",
+    g:`교육 프랜차이즈를 100호점 넘게 키운 브랜드 전략가로서 브레아노 전국 인지도 90일 계획을 세웁니다.
+### 핵심 전략 한 문장
+### 바이럴 엔진 — 아이 변화(콘텐츠 원천) → 학부모 공유 → 전 지점 동시 발행 → 검색·문의 → 가맹 문의, 단계별로 무엇을 만들고 누가 하는지
+### 시그니처 포맷 3개 — 매주 반복해 브랜드를 알아보게 만드는 콘텐츠 형식(이름·해시태그·촬영법)
+### 월별 계획 (1·2·3개월 표: 전국 캠페인 | 지점 할 일 | 본사 할 일 | 목표 지표)
+### 예산 없이 할 것 / 예산이 있으면 할 것 (금액은 [원장님 입력])
+### 측정 지표 — 네이버 '브레아노' 검색량, 해시태그 게시물 수, 저장·공유 수, 소개 등록 비율, 가맹 문의 수
+### 하지 말아야 할 것 — 맘카페 위장 후기, 협찬 미표시, 아이 얼굴 무단 노출, 결과 보장 표현`},
+  challenge:{e:"💯",n:"100일 피아노 챌린지 키트",send:"#브레아노100일 챌린지 키트를 만들어 주세요.",
+    g:`재원생과 전국 일반 가정 누구나 참여하는 '하루 5분, 100일 피아노' UGC 챌린지 키트를 만듭니다.
+### 챌린지 이름·해시태그 후보 3개 (기본: #브레아노100일)
+### 참여 방법 3단계 (얼굴 없이 손·건반 영상, Day 1 / Day 50 / Day 100 같은 곡 비교)
+### 100칸 연습 체크표 문구 (카톡 이미지·인쇄용)
+### 완주 보상 — 작은음악회 무대, 수료증, 원장 피드백 영상 등 교육적 보상
+### 참여 안내 문구 — 인스타 / 블로그 / 재원생 카톡 / 지점 게시판
+### 학부모 동의 문구 (영상 게시, 아이 본인 동의 포함)
+### 매주 운영 루틴 (본사·지점) / 측정 지표`},
+  referral:{e:"🎁",n:"소개 선물권 설계",send:"재원생 학부모가 친구에게 건네는 '시작 진단 선물권' 소개 프로그램을 설계해 주세요.",
+    g:`할인 대신 교육적 가치로 움직이는 소개 프로그램.
+### 프로그램 이름 3개
+### 선물권 카드 문구 (카톡으로 보내는 이미지용 — 앞면/뒷면)
+### 소개한 가정 감사 선물 / 소개받은 가정 혜택 (교육적 가치)
+### 학부모에게 처음 안내하는 카톡 (부담 없이)
+### 원장이 소개 요청하기 좋은 순간 5개 (작은음악회 직후, 성장 리포트에 답장이 왔을 때 등)
+### 기록·측정 방법 (상담 탭 '지인 소개' 채널로 기록 → 소개 등록 비율)`},
+  campaignkit:{e:"📣",n:"전국 동시 캠페인 키트",tpl:"캠페인 이름·주제: \n기간: \n해시태그: ",
+    g:`본사가 기획해 모든 지점이 같은 날 같은 해시태그로 동시에 발행하는 전국 캠페인 키트를 만듭니다.
+### 캠페인 한 줄 메시지
+### 발행 일정표 (D-7 ~ D+7: 날짜 | 채널 | 무엇을 | 누가)
+### 지점별 바꿔 쓰는 공통 원고 — 인스타 캡션, 블로그 도입부, 플레이스 소식, 재원생 카톡 (지점명·지역은 {지점명} {지역}으로)
+### 촬영 가이드 (얼굴 없이 찍는 컷 5개)
+### 지점 체크리스트 / 본사가 모을 성과 지표`},
+  press:{e:"📰",n:"보도자료",tpl:"소재: (예: 원장 교재 집필 / 성장 리포트 시스템 / 연말 작은음악회 / 신규 지점 오픈 / 나눔 연주회)\n날짜·장소: ",
+    g:`지역·교육 언론용 보도자료. ### 제목 3안 / 부제 ### 리드 문단(육하원칙) ### 본문 4~5문단 (사실 중심, 원장 인용문 1개) ### 학원 소개 상자 ### 배포처 추천 (지역 신문, 교육 전문지, 맘카페 공지 요청 등)과 배포 메일 문구. 숫자·수상은 [원장님 입력].`},
+  influencer:{e:"🤳",n:"육아 인플루언서 협업",send:"육아 인플루언서와 '우리 아이 피아노 시작 진단' 협업 제안을 준비해 주세요.",
+    g:`마이크로 육아 인플루언서(지역 기반 팔로워 1천~5만) 협업.
+### 고르는 기준 5개 (지역, 아이 나이대, 댓글 진정성 등)
+### 제안 DM 2버전 (짧게 / 정중하게)
+### 협업 내용 — 시작 진단 체험 + 원장 리포트, 찍을 장면, 일정
+### 콘텐츠 가이드 — 제목·첫 줄에 한글 "협찬" 표시 필수(공정위 추천·보증 심사지침), 얼굴 노출은 보호자 선택
+### 계약 시 확인할 것 체크리스트`},
+  mamcafe:{e:"☕",n:"맘카페 정보 답변",tpl:"맘카페 질문 (붙여 넣기): ",
+    g:`맘카페에 올라온 피아노 관련 질문에 원장이 전문가로서 다는 정보형 답변을 씁니다. 광고·학원 홍보 금지, 학원 이름은 쓰지 않거나 카페 규칙이 허용할 때만 "피아노 학원을 운영하는 원장"이라고 신분을 밝힘. 답변 2버전(짧게 5줄 / 자세히). 마지막에 '이 카페 규칙에서 확인할 것' 3줄.`},
+  shorts:{e:"⏱️",n:"1분 레슨 쇼츠 시리즈",send:"원장 집필 교재로 '1분 레슨' 쇼츠 10편 시리즈를 기획해 주세요.",
+    g:`전국 학부모가 검색하는 고민("집에서 연습 안 해요", "손 모양", "악보 읽기")을 푸는 원장 1분 레슨 쇼츠 10편. 표: 편 | 제목(검색어 포함) | 첫 2초 훅 | 핵심 팁 | 마지막 문장(채널 구독·브레아노 언급) | 촬영(손·건반·교재). 시리즈 이름과 공통 오프닝·엔딩 문구도.`},
+  consent:{e:"✍️",n:"촬영·게시 동의서",send:"학원 아이 사진·영상 촬영과 SNS 게시 동의서를 만들어 주세요.",
+    g:`학부모용 '사진·영상 촬영 및 게시 동의서' 초안. 항목: 목적, 촬영 범위, 게시 채널(블로그·인스타·유튜브·지점 단톡), 얼굴 노출 선택(얼굴 비노출만 / 노출 허용 / 게시 불가), 보관 기간, 동의 철회와 삭제 요청 방법, 아이 본인 의사 확인란, 만 14세 미만 법정대리인 서명. 쉬운 말로. 마지막에 "법률 검토 후 사용하세요" 한 줄과 개인정보보호위원회 확인 권고.`},
+  b2b:{e:"🧲",n:"원장님 대상 바이럴(가맹)",send:"피아노 원장님들 사이에서 브레아노를 알리는 가맹 바이럴 계획을 세워 주세요.",
+    g:`B2B 바이럴: 전국 피아노 원장님들이 브레아노를 알고 가맹 문의까지 오게 하는 흐름.
+### 무료로 줄 자료(미끼) 5개 — 상담 진단 시트, 성장 리포트 템플릿, AI 홍보 프롬프트 등
+### 스레드·네이버 카페 연재 기획 10편 (원장님 고민 → 브레아노 방식)
+### 원데이 세미나 퍼널 (무료 자료 → 단톡방 → 세미나 → 1:1 상담 → 가맹)
+### 신청 페이지 문구
+### 측정 지표 (자료 신청 수, 세미나 참석률, 가맹 상담 전환율)`},
+});
+const PLAYBOOK = [
+  {id:"challenge", t:"#브레아노100일 챌린지", who:"본사 기획 · 지점 운영 · 학부모 참여", how:"하루 5분 연습 100일. 같은 곡을 Day 1·50·100에 손 영상으로 비교하면 '아이 변화'가 그대로 공유 콘텐츠가 됩니다. 재원생이 아니어도 참여 가능.", m:"해시태그 게시물 수, 체크표 신청 수"},
+  {id:"campaignkit", t:"전 지점 동시 발행", who:"본사 → 모든 지점", how:"한 달에 한 번 같은 날, 같은 해시태그로 모든 지점이 발행합니다. 혼자 하는 학원은 못 하는 프랜차이즈만의 확산 방식이에요.", m:"참여 지점 수, 캠페인 기간 문의 수"},
+  {id:"shorts", t:"원장 1분 레슨 쇼츠", who:"본사(대표 원장) 촬영", how:"전국 학부모가 검색하는 고민을 교재 저자가 1분에 풀어 줍니다. 얼굴 대신 손과 교재로 찍어 신뢰와 검색 노출을 함께 얻습니다.", m:"조회·저장 수, '브레아노' 검색량"},
+  {id:"referral", t:"시작 진단 선물권", who:"재원생 학부모 → 친구", how:"할인 대신 '우리 아이 시작 진단'을 선물하는 카드입니다. 학부모가 친구에게 건네기 쉬워 소개가 늘어납니다.", m:"소개 문의 비율(상담 탭에서 자동 계산)"},
+  {id:"press", t:"보도자료 · 지역 언론", who:"본사 · 지점 오픈 때마다", how:"교재 집필 원장, 성장 리포트 시스템, 나눔 연주회, 신규 지점 오픈을 기사로 만듭니다. 검색했을 때 신뢰를 주는 기록이 남습니다.", m:"보도 건수, 기사 유입"},
+  {id:"influencer", t:"육아 인플루언서 진단 체험", who:"지점 · 지역 마이크로 인플루언서", how:"팔로워 수보다 동네 엄마들의 신뢰를 봅니다. 시작 진단 체험과 리포트를 콘텐츠로 만들고, 제목·첫 줄에 '협찬'을 반드시 표시합니다.", m:"협업 게시물 저장 수, 문의 수"},
+  {id:"mamcafe", t:"맘카페 정보 답변", who:"지점 원장", how:"광고 글 대신 질문에 전문가 답변을 답니다. 위장 후기는 강퇴와 역풍 위험이 커서 하지 않습니다.", m:"답변 수, 쪽지·문의"},
+  {id:"b2b", t:"원장님 대상 바이럴 → 가맹", who:"본사(대표)", how:"스레드·카페에 운영 노하우와 무료 템플릿을 꾸준히 올리고, 세미나를 거쳐 가맹 상담으로 잇습니다. 브레아노100의 핵심 엔진입니다.", m:"자료 신청 → 세미나 → 가맹 상담 전환율"},
+];
+const SAFETY = [
+  "아이 사진·영상: 보호자 서면 동의(만 14세 미만은 법정대리인 동의) + 아이 본인 동의를 받았다",
+  "얼굴이 보이지 않는 구도(손·건반·뒷모습)를 기본으로 찍는다. 동의를 철회하면 바로 지운다",
+  "협찬·체험단·대가가 있는 글은 제목 또는 첫 줄에 한글로 '협찬'·'광고'를 표시한다 (공정위 추천·보증 심사지침, 2024.12 시행)",
+  "'입상 보장', '무조건 실력 향상' 같은 결과 보장·과장 표현을 쓰지 않는다 (학원법 과대·거짓 광고)",
+  "교습비를 표시할 때는 교육청에 등록한 금액과 같게 쓴다. 온라인 광고에 표시할 항목은 관할 교육청에 확인했다",
+  "맘카페·커뮤니티에 광고를 후기처럼 위장하지 않는다. 카페 규칙을 먼저 확인한다",
+  "학부모 후기는 동의를 받고 쓰고, 아이 이름과 학교 이름은 지운다",
+];
 const GROUPS = [
   {t:"홍보 만들기", ids:["blog","insta","reels","threads","place","copy","event","calendar","image","photo"]},
+  {t:"전국 확산", ids:["viralplan","challenge","referral","shorts","press","influencer","mamcafe","consent"]},
   {t:"학부모 소통", ids:["report","diag","consult","notice","retention","review"]},
-  {t:"본사 · 가맹", ids:["audit","franchise","open12","sop","seminar"], hq:true},
+  {t:"본사 · 가맹", ids:["audit","franchise","open12","sop","seminar","campaignkit","b2b"], hq:true},
 ];
 const FOLLOWUPS = ["더 짧게","더 따뜻하게","다른 버전으로","카톡용으로 바꿔줘","브랜드 검수해줘"];
-const CHANNELS = ["네이버 블로그","인스타그램","네이버 플레이스","지인 소개","간판·전단","스레드","기타"];
+const CHANNELS = ["네이버 블로그","인스타그램","네이버 플레이스","지인 소개","맘카페","유튜브","당근","간판·전단","스레드","언론 기사","기타"];
 const STAGES = ["문의","상담예약","진단완료","보류","등록","미등록"];
 
 /* =====================================================================
@@ -390,7 +486,7 @@ const STAGES = ["문의","상담예약","진단완료","보류","등록","미등
    ===================================================================== */
 const S = {
   db:null, user:null, uid:null, isAdmin:false, isOwner:false, canWrite:false, dbState:"loading",
-  standard:DEFAULT_STANDARD, branch:null, leads:[], students:[], posts:[], archive:[], kpiAll:[], myKpi:null,
+  standard:DEFAULT_STANDARD, campaign:null, branch:null, leads:[], students:[], posts:[], archive:[], kpiAll:[], myKpi:null,
   turns:[], mode:null, busy:false, ctl:null, sample:null, attached:null, canImages:false, tab:"today",
   leadFilter:"open", pendingStudent:null,
 };
@@ -424,7 +520,8 @@ function stats(mk = monthKey()){
   const byChannel = {};
   L.forEach(l => { const c = l.channel||"기타"; byChannel[c] = byChannel[c] || {leads:0, enrolled:0}; byChannel[c].leads++; if (l.stage==="등록") byChannel[c].enrolled++; });
   const reportsDue = S.students.filter(s => s.status !== "퇴원" && (daysSince(s.lastReport) ?? 99) >= 7).length;
-  return { leads:L.length, consults, enrolled, conv: L.length ? Math.round(enrolled/L.length*100) : null,
+  const referral = L.length ? Math.round(L.filter(l => l.channel === "지인 소개").length / L.length * 100) : null;
+  return { referral, leads:L.length, consults, enrolled, conv: L.length ? Math.round(enrolled/L.length*100) : null,
     active, left, retention: active+left ? Math.round(active/(active+left)*100) : null, byChannel, reportsDue };
 }
 function todos(){
@@ -464,6 +561,7 @@ function renderToday(){
   const act = {lead:"후속 문자 쓰기", rep:"리포트 쓰기", risk:"답장·통화 대본", post:"AI로 쓰기"};
   $("v-today").innerHTML = `
     ${dbBanner()}
+    ${campaignBox()}
     <div class="card">
       <div class="sec-h"><p class="big-date">${esc(new Date().toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"long"}))}</p><span class="sub">${esc(branchName())}</span></div>
       ${kpiTiles(st)}
@@ -624,7 +722,7 @@ function renderHQ(){
     </div>
     <div class="card">
       <div class="sec-h"><h2>본사 · 가맹 도구</h2></div>
-      <div class="chips">${GROUPS[2].ids.map(id=>`<button class="chip" type="button" data-mode="${id}">${MODES[id].e} ${MODES[id].n}</button>`).join("")}</div>
+      <div class="chips">${GROUPS.find(g=>g.hq).ids.map(id=>`<button class="chip" type="button" data-mode="${id}">${MODES[id].e} ${MODES[id].n}</button>`).join("")}</div>
     </div>` : `
     <div class="card">
       <div class="sec-h"><h2>브랜드 검수</h2></div>
@@ -641,6 +739,65 @@ function renderHQ(){
       <p class="note">형용사 말고 '하는 일', 학부모가 실제로 한 말을 적을수록 글이 좋아져요.</p>
       <textarea id="branchText" rows="14" style="margin-top:8px" aria-label="지점 정보 카드">${esc(S.branch || (S.isOwner?MAIN_BRANCH:BLANK_BRANCH))}</textarea>
       <div class="row" style="margin-top:8px"><button class="btn primary" type="button" data-act="save-branch">지점 카드 저장</button></div>
+    </div>`;
+}
+
+/* =====================================================================
+   7-2. 화면 — 전국 확산 (바이럴)
+   ===================================================================== */
+function campaignActive(){ const c = S.campaign; return c && c.name && (!c.to || c.to >= today()) ? c : null; }
+function campaignBox(){
+  const c = campaignActive(); if (!c) return "";
+  return `<div class="camp"><div class="note" style="color:inherit;opacity:.8">이번 달 전국 캠페인 · 모든 지점이 함께 발행해요</div>
+    <div style="font-size:17px;font-weight:700">${esc(c.name)} <span class="tag">${esc(c.tag||"")}</span></div>
+    <div style="font-size:13.5px;opacity:.9">${esc(c.from||"")}${c.to?" ~ "+esc(c.to):""}${c.brief?" · "+esc(c.brief):""}</div>
+    <div class="row"><button class="btn" type="button" data-act="camp-mine">우리 지점 버전 만들기</button></div></div>`;
+}
+function renderViral(){
+  const st = stats(), c = S.campaign || {};
+  const done = local.get("safety", []);
+  $("v-viral").innerHTML = `
+    ${campaignBox()}
+    <div class="card">
+      <div class="sec-h"><h2>브레아노 전국 확산 엔진</h2><span class="sub">혼자 하는 학원은 못 하고, 지점이 많을수록 커지는 구조</span></div>
+      <ol class="flow">
+        <li><span><b>아이 변화를 기록</b> — 성장 리포트, 100일 비교 영상, 작은음악회 첫 무대 (얼굴 없이)</span></li>
+        <li><span><b>학부모가 공유</b> — 자랑하고 싶은 순간을 저장·공유하기 쉬운 형식으로 건넴</span></li>
+        <li><span><b>전 지점이 같은 날 발행</b> — 같은 해시태그로 동시에 올리면 지역마다 '브레아노'가 한꺼번에 보임</span></li>
+        <li><span><b>검색 → 가까운 지점 문의</b> — 블로그·플레이스·쇼츠가 검색 수요를 받아 냄</span></li>
+        <li><span><b>원장님들이 알게 됨 → 가맹 문의</b> — 성과와 운영 노하우가 원장 커뮤니티로 퍼져 브레아노100으로 이어짐</span></li>
+      </ol>
+      <div class="kpis" style="margin-top:12px;grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="kpi"><div class="l">소개로 온 문의</div><div class="v">${st.referral==null?"–":st.referral+"%"}</div><div class="s">이번 달 · 상담 탭 기준</div></div>
+        <div class="kpi"><div class="l">이번 달 문의</div><div class="v">${st.leads}</div><div class="s">전 채널</div></div>
+        <div class="kpi"><div class="l">재원생</div><div class="v">${st.active}</div><div class="s">공유의 원천</div></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" type="button" data-mode="viralplan">🚀 전국 바이럴 90일 계획 받기</button></div>
+    </div>
+    <div class="card">
+      <div class="sec-h"><h2>확산 플레이북</h2><span class="sub">버튼을 누르면 AI가 바로 실행안을 써요</span></div>
+      <div class="play">${PLAYBOOK.filter(p => p.id!=="b2b" || S.isAdmin).map(p => `
+        <div class="pc"><div class="t">${MODES[p.id].e} ${esc(p.t)}</div><div class="who">${esc(p.who)}</div>
+          <div style="font-size:14px">${esc(p.how)}</div><div class="m">측정: ${esc(p.m)}</div>
+          <div class="row"><button class="btn primary" type="button" data-mode="${p.id}">실행안 만들기</button></div></div>`).join("")}</div>
+    </div>
+    ${S.isAdmin ? `
+    <div class="card">
+      <div class="sec-h"><h2>이번 달 전국 캠페인 정하기</h2><span class="sub">본사만 · 저장하면 모든 지점의 '오늘'과 '확산' 탭에 떠요</span></div>
+      <form class="form" id="campForm">
+        <label class="full">캠페인 이름 <input type="text" id="cf-name" value="${esc(c.name||"")}" placeholder="예: 겨울방학 100일 피아노 시작"></label>
+        <label>해시태그 <input type="text" id="cf-tag" value="${esc(c.tag||"")}" placeholder="#브레아노100일"></label>
+        <label>시작일 <input type="date" id="cf-from" value="${esc(c.from||"")}"></label>
+        <label>종료일 <input type="date" id="cf-to" value="${esc(c.to||"")}"></label>
+        <label class="full">지점에 전할 한 줄 <input type="text" id="cf-brief" value="${esc(c.brief||"")}" placeholder="예: 12/20 같은 날 Day1 손 영상 올리기"></label>
+        <div class="full row"><button class="btn primary" type="submit">전 지점에 공지</button><button class="btn" type="button" data-mode="campaignkit">캠페인 키트 AI로 만들기</button>${c.name?`<button class="btn" type="button" data-act="camp-end">캠페인 종료</button>`:""}</div>
+      </form>
+    </div>` : ""}
+    <div class="card">
+      <div class="sec-h"><h2>올리기 전 법·안전 체크</h2><span class="sub">바이럴은 한 번의 사고로 브랜드 전체가 무너져요</span></div>
+      ${SAFETY.map((s,i) => `<label class="chk"><input type="checkbox" data-safety="${i}" ${done.includes(i)?"checked":""}><span>${esc(s)}</span></label>`).join("")}
+      <div class="row" style="margin-top:10px"><button class="btn" type="button" data-mode="consent">✍️ 촬영·게시 동의서 만들기</button></div>
+      <p class="note" style="margin-top:8px">법 조항 요약은 참고용이에요. 실제 적용 전 관할 교육청·공정위·개인정보보호위원회 안내를 확인하세요.</p>
     </div>`;
 }
 
@@ -716,10 +873,11 @@ function aiNote(){
 /* =====================================================================
    9. 탭 전환 · 공통
    ===================================================================== */
-const RENDER = {today:renderToday, chat:renderChat, leads:renderLeads, students:renderStudents, hq:renderHQ};
+const RENDER = {today:renderToday, chat:renderChat, leads:renderLeads, students:renderStudents, viral:renderViral, hq:renderHQ};
 function go(tab){
+  if (!RENDER[tab]) tab = "today";
   S.tab = tab; local.set("tab", tab);
-  ["today","chat","leads","students","hq"].forEach(t => $("v-"+t).hidden = t !== tab);
+  ["today","chat","leads","students","viral","hq"].forEach(t => $("v-"+t).hidden = t !== tab);
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
   $("composer").hidden = tab !== "chat";
   RENDER[tab]();
@@ -813,6 +971,9 @@ document.addEventListener("click", async e => {
     case "hq-diag": { const mk = monthKey(); const lines = S.kpiAll.filter(k=>(k.months||{})[mk]).map(k=>{ const m=k.months[mk]; return `- ${k.branch}: 문의 ${m.leads}, 등록 ${m.enrolled}, 재원 ${m.active}, 퇴원 ${m.left}`; });
       go("chat"); setMode("diagnose"); return submit(`전 지점 ${mk} 숫자입니다. 본사 관점에서 지점 간 차이, 잘하는 지점의 방식을 다른 지점에 퍼뜨릴 방법, 도움이 필요한 지점과 본사 지원책을 진단해 주세요.\n${lines.join("\n")}`, "diagnose"); }
     case "report-hq": return reportHQ();
+    case "camp-mine": { const c = campaignActive(); if (!c) return; go("chat"); setMode("campaignkit");
+      return submit(`본사 전국 캠페인을 우리 지점(${branchName()}) 버전으로 바꿔 주세요. 공통 원고의 {지점명}{지역}을 우리 지점 정보로 채우고, 우리 지점이 할 일만 날짜별로 정리해 주세요.\n캠페인: ${c.name}\n해시태그: ${c.tag||""}\n기간: ${c.from||""} ~ ${c.to||""}\n본사 안내: ${c.brief||""}`, "campaignkit"); }
+    case "camp-end": return write(()=>S.db.doc("brand/campaign").set({ name:"", updatedAt:new Date().toLocaleString("ko-KR") }), "캠페인을 종료했어요");
     case "plan": return makePlan(b);
     case "new-chat": if (S.ctl) S.ctl.abort(); S.turns = []; local.set("turns", []); setMode(null); return renderChat();
     case "save-std": { const v = $("stdText").value.trim() || DEFAULT_STANDARD; return write(()=>S.db.doc("brand/standard").set({ text:v, updatedAt:new Date().toLocaleString("ko-KR") }), "브랜드 표준을 저장했어요 · 모든 지점에 적용돼요"); }
@@ -830,6 +991,7 @@ document.addEventListener("change", e => {
   if (d.next) write(()=>leadsCol().doc(d.next).update({ next:t.value }));
   if (d.risk) write(()=>stuCol().doc(d.risk).update({ risk:t.value }), t.value==="위험" ? "오늘 할 일에 올렸어요" : null);
   if (d.post) write(()=>postsCol().doc(d.post).update({ done:t.checked }));
+  if (d.safety){ const i = Number(d.safety); const s = new Set(local.get("safety", [])); t.checked ? s.add(i) : s.delete(i); local.set("safety", [...s]); }
 });
 document.addEventListener("submit", async e => {
   if (e.target.id === "form"){ e.preventDefault(); return submit(); }
@@ -837,6 +999,10 @@ document.addEventListener("submit", async e => {
     const v = id => $(id).value.trim();
     const ok = await write(async()=>{ await ensureWs(); await leadsCol().add({ who:v("lf-who"), age:v("lf-age"), channel:$("lf-ch").value, concern:v("lf-con"), memo:v("lf-memo"), stage:"문의", next:$("lf-next").value||today(), createdAt:today() }); }, "문의를 기록했어요");
     if (ok) e.target.reset(); }
+  if (e.target.id === "campForm"){ e.preventDefault();
+    const v = id => $(id).value.trim();
+    if (!v("cf-name")) return toast("캠페인 이름을 적어 주세요");
+    return write(()=>S.db.doc("brand/campaign").set({ name:v("cf-name"), tag:v("cf-tag"), from:v("cf-from"), to:v("cf-to"), brief:v("cf-brief"), updatedAt:new Date().toLocaleString("ko-KR") }), "전 지점에 캠페인을 공지했어요"); }
   if (e.target.id === "stuForm"){ e.preventDefault();
     const v = id => $(id).value.trim();
     const ok = await write(async()=>{ await ensureWs(); await stuCol().add({ who:v("sf-who"), grade:v("sf-grade"), level:v("sf-level"), since:v("sf-since"), memo:v("sf-memo"), status:"재원", risk:"안정", lastReport:"" }); }, "재원생을 추가했어요");
@@ -976,6 +1142,7 @@ go(S.tab);
     const fail = () => { clearTimeout(slow); S.dbState = "slow"; refresh(); };
     const listOf = snap => snap.docs.map(d => ({ id:d.id, ...d.data() }));
     db.doc("brand/standard").onSnapshot(s => { ok(s); if (s.exists && s.data().text) S.standard = s.data().text; refresh(); }, fail);
+    db.doc("brand/campaign").onSnapshot(s => { S.campaign = s.exists ? s.data() : null; refresh(); }, () => {});
     ws().onSnapshot(s => { ok(s); if (s.exists && s.data().card){ S.branch = s.data().card; local.set("branch", S.branch); } refresh(); $("kicker").textContent = branchName() + " · 운영 시스템"; }, fail);
     leadsCol().onSnapshot(s => { ok(s); S.leads = listOf(s); refresh(); }, fail);
     stuCol().onSnapshot(s => { ok(s); S.students = listOf(s); refresh(); }, fail);
